@@ -1,0 +1,22 @@
+enum class Location {
+    ForestFarm ,
+    Ocean,
+    CindersapForestPond, 
+    TownRiver, 
+    ForestRiver, 
+    MountainLake, 
+    ForestPond, 
+    SecretWoods, 
+    Mines, 
+    WitchSwamp, 
+    Sewers, 
+    MutantBugLair, 
+    Desert, 
+    PirateCove,
+    GIPond,  
+    GIRiver, 
+    GIOcean,
+    VolcanoCaldera,
+    NightMarket,
+    Unknown
+};
