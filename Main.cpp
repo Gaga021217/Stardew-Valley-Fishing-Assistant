@@ -34,6 +34,8 @@ Location stringToLocation(std::string str) {
     return Location::Unknown;
 }
 
+
+
 Behavior  stringToBehavior(std::string str) {
     if(str == "Floater") { return Behavior::Floater; }
     if(str == "Mixed") { return Behavior::Mixed; }
@@ -106,6 +108,7 @@ void setNonBlocking(bool enable) {
 int main() {
 
     std::vector<Fish> fishList;
+    FishReader fr("fish_database.csv", fishList);
     std::ifstream file("fish_database.csv");
     if (!file.is_open()) {
         std::cerr << "Error opening file!" << std::endl;
@@ -303,7 +306,7 @@ int main() {
         /*--------------------------SEASON--------------------------*/
             std::vector<std::string> options = {"Any", "Spring", "Summer", "Fall", "Winter"};
             int selectedOption = 0;
-            std::string question = "What season is it?";
+            std::string question = "What season is it? \t";
             printOptions(options, selectedOption, question);
 
             setNonBlocking(true); // Enable non-blocking input
@@ -385,23 +388,39 @@ int main() {
             } while (key != 10); // Repeat until Enter key is pressed
 
             setNonBlocking(false); // Disable non-blocking input
-
-
-            for(int i = 0; i < selectedOptions.size(); i++) {
-                if(selectedOptions[i]) {
-                    question.append(options[i]);
-                    if(i != selectedOptions.size() - 1) {
-                        question.append(", ");
+            
+            bool boolSum = true;
+            if(!selectedOptions[0]) {
+                for(int i = 0; i < selectedOptions.size(); i++) {
+                    if(selectedOptions[i]) {
+                        question.append(options[i]);
+                        boolSum = boolSum | selectedOptions[i];
+                        if(i != selectedOptions.size() - 1) {
+                            question.append(", ");
+                        }
+                    }
+                }
+            }
+            else {
+                question.append("Any");
+            }
+            if(!boolSum) {
+                question.append(options[selectedOption]);
+                selectedOptions[selectedOption] = true;
+                if(selectedOption == 0) {
+                    for(int i = 1; i < selectedOptions.size(); i++) {
+                        selectedOptions[i] = selectedOptions[0];
                     }
                 }
             }
 
             options.clear();
-            options = {"Any", "ForestFarm", "Ocean", "CindersapForestPond", "TownRiver", "ForestRiver", "ForestPond", "SecretWoods", "Mountain", "Mines", "WitchSwamp", "Sewers", "MutantBugLair", "Desert", "PirateCove", "GIPond", "GIRiver", "GIOcean", "VolcanoCaldera", "NightMarket"};
+            options = {"Any", "ForestFarm", "Ocean", "CindersapForestPond", "TownRiver", "ForestRiver", "ForestPond", "SecretWoods", "MountainLake", "Mines", "WitchSwamp", "Sewers", "MutantBugLair", "Desert", "PirateCove", "GIPond", "GIRiver", "GIOcean", "VolcanoCaldera", "NightMarket"};
             bool keep = false;
             for(int i = 0; i < filteredFish.size(); i++) {
-                for(int j = 0; j < options.size(); j++) {
+                for(int j = 1; j < options.size(); j++) {
                     if(selectedOptions[j]) {
+std::cout << j << " ";
                         if(filteredFish[i].isAvailable(stringToLocation(options[j]))) {
                             keep |= true;
                             break;
@@ -414,6 +433,7 @@ int main() {
                     i--;
                 }
             }
+std::cin.ignore();
 
         /*--------------------------WEATHER--------------------------*/
             system("clear");
