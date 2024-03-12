@@ -1,3 +1,14 @@
+#pragma once
+
+enum class Behavior {
+    Floater,
+    Mixed,
+    Smooth,
+    Sinker,
+    Dart,
+    Unknown
+};
+
 enum class Location {
     ForestFarm ,
     Ocean,
@@ -20,3 +31,13 @@ enum class Location {
     NightMarket,
     Unknown
 };
+
+enum class Season{
+    Spring, 
+    Summer, 
+    Fall, 
+    Winter,
+    Unknown
+};
+
+

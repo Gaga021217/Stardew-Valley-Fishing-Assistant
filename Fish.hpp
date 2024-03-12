@@ -1,11 +1,12 @@
+#pragma once
+
 #include <string>
 #include <vector>
 #include <iostream>
 #include <fstream>
 #include <cmath>
-#include "Location.cpp"
-#include "Season.cpp"
-#include "Behavior.cpp"
+#include "Enums.hpp"
+
 
 #define RESET   "\033[0m"
 #define RED     "\033[31m"
@@ -15,29 +16,31 @@
 #define MAGENTA "\033[35m"
 #define CYAN    "\033[36m"
 
+using namespace std;
+
 class Fish {
 public:
-    std::string getName() { 
+    string getName() { 
         return Name; 
     }
-    std::string getDescription() { 
+    string getDescription() { 
         return Description; 
     }
-    std::string getPrice(double fisher) { 
-        std::string str = "";
+    string getPrice(double fisher) { 
+        string str = "";
         str.append("Normal: ");
-        str.append(std::to_string(int(floor(Price[0] * fisher))));
+        str.append(to_string(int(floor(Price[0] * fisher))));
         str.append("\n\t\tSilver: ");
-        str.append(std::to_string(int(floor(Price[1] * fisher))));
+        str.append(to_string(int(floor(Price[1] * fisher))));
         str.append("\n\t\tGold: ");
-        str.append(std::to_string(int(floor(Price[2] * fisher))));
+        str.append(to_string(int(floor(Price[2] * fisher))));
         str.append("\n\t\tIridium: ");
-        str.append(std::to_string(int(floor(Price[3] * fisher))));
+        str.append(to_string(int(floor(Price[3] * fisher))));
         return str;
         
     }
-    std::string getLocations() { 
-        std::string str = "";
+    string getLocations() { 
+        string str = "";
         for (int i = 0; i < Locations.size(); i++) {
             str.append(locationToString(Locations[i]));
             if (i != Locations.size() - 1) {
@@ -48,13 +51,13 @@ public:
 
         return str;
     }
-    std::string getAvailableTime() {
-        std::string str = "";
+    string getAvailableTime() {
+        string str = "";
         if(StartTime == 6 && EndTime == 26) {
             str.append("All Day");
             return str;
         }
-        str.append(std::to_string(StartTime));
+        str.append(to_string(StartTime));
         str.append(" - ");
         if(EndTime == 26) {
             str.append("2");
@@ -63,12 +66,12 @@ public:
         } else if(EndTime == 24) {
             str.append("0");
         }else {
-            str.append(std::to_string(EndTime));
+            str.append(to_string(EndTime));
         }
         return str;
     }
-    std::string getSeasons() { 
-        std::string str = "";
+    string getSeasons() { 
+        string str = "";
         if(Seasons.size() == 4) {
             str.append("All Seasons");
             return str;
@@ -81,8 +84,8 @@ public:
         }
         return str;
     }
-    std::string getWeathers() { 
-        std::string str = "";
+    string getWeathers() { 
+        string str = "";
         if (Rain && !Sun) {
             str.append("Rainy");
             return str;
@@ -95,16 +98,16 @@ public:
 
         return str;
     }
-    std::string getSizeRange() { 
-        std::string str = "";
-        str.append(std::to_string(MinSize));
+    string getSizeRange() { 
+        string str = "";
+        str.append(to_string(MinSize));
         str.append(" - ");
-        str.append(std::to_string(MaxSize));
+        str.append(to_string(MaxSize));
         return str;
     }
-    std::string getDifficulty() {
-        std::string str = "";
-        str.append(std::to_string(Difficulty));
+    string getDifficulty() {
+        string str = "";
+        str.append(to_string(Difficulty));
         str.append(" ");
         str.append(behaviorToString(Behave));
         return str;
@@ -112,8 +115,8 @@ public:
     int getXP() { 
         return XP; 
     }
-    std::string getUsedIn() { 
-        std::string str = "";
+    string getUsedIn() { 
+        string str = "";
         for (int i = 0; i < UsedIn.size(); i++) {
             str.append(UsedIn[i]);
             if (i != UsedIn.size() - 1) {
@@ -165,7 +168,7 @@ public:
 
 
     void printFish() {
-        std::string str;
+        string str;
         str.append("\n---------------------------------------------\nName: ");
         str.append(getName());
         str.append("\nCatch between: ");
@@ -201,44 +204,44 @@ public:
         str.append("\nYou can use it for: ");
         str.append(getUsedIn());
         str.append("\n---------------------------------------------\n");
-        std::cout << str;
+        cout << str;
     }
 
     void printFishAllDetails(double fisher) {
-        std::string str;
-        std::cout << "\n---------------------------------------------\n";
-        std::cout << YELLOW << "Name:\t\t" << RESET << getName()  << std::endl;
-        std::cout << YELLOW << "Description:\t" << RESET << getDescription() << std::endl;
-        std::cout << YELLOW << "Price:\t\t" << RESET << getPrice(fisher) << std::endl;
-        std::cout << YELLOW << "Catch between:\t" << RESET << getAvailableTime() << std::endl;
-        std::cout << YELLOW << "In weathers:\t" << RESET << getWeathers() << std::endl;
-        std::cout << YELLOW << "Locations:\t" << RESET << getLocations() << std::endl;
-        std::cout << YELLOW << "In season:\t" << RESET << getSeasons() << std::endl;
+        string str;
+        cout << "\n---------------------------------------------\n";
+        cout << YELLOW << "Name:\t\t" << RESET << getName()  << endl;
+        cout << YELLOW << "Description:\t" << RESET << getDescription() << endl;
+        cout << YELLOW << "Price:\t\t" << RESET << getPrice(fisher) << endl;
+        cout << YELLOW << "Catch between:\t" << RESET << getAvailableTime() << endl;
+        cout << YELLOW << "In weathers:\t" << RESET << getWeathers() << endl;
+        cout << YELLOW << "Locations:\t" << RESET << getLocations() << endl;
+        cout << YELLOW << "In season:\t" << RESET << getSeasons() << endl;
 
 
         if(SpecialLocation != Location::Unknown) {
-            std::cout << YELLOW << "Or, catch at\t" << RESET << locationToString(SpecialLocation) << " in ";
+            cout << YELLOW << "Or, catch at\t" << RESET << locationToString(SpecialLocation) << " in ";
             if(SpecialSeasons.size() == 4) {
-                std::cout << "any season." << std::endl;
+                cout << "any season." << endl;
             }
             else {
                 for (int i = 0; i < SpecialSeasons.size(); i++) {
-                    std::cout << seasonToString(SpecialSeasons[i]);
+                    cout << seasonToString(SpecialSeasons[i]);
                     if (i != Seasons.size() - 1) {
-                        std::cout << ", " << std::endl;
+                        cout << ", " << endl;
                     }
                 }
             }
         }
         
-        std::cout << YELLOW << "Size:\t\t" << RESET << getSizeRange() << std::endl;
-        std::cout << YELLOW << "Difficulty:\t" << RESET << getDifficulty() << std::endl;
-        std::cout << YELLOW << "XP:\t\t" << RESET << getXP() << std::endl;
-        std::cout << YELLOW << "Use it for:\t" << RESET << getUsedIn() << std::endl;
-        std::cout << "---------------------------------------------\n";
+        cout << YELLOW << "Size:\t\t" << RESET << getSizeRange() << endl;
+        cout << YELLOW << "Difficulty:\t" << RESET << getDifficulty() << endl;
+        cout << YELLOW << "XP:\t\t" << RESET << getXP() << endl;
+        cout << YELLOW << "Use it for:\t" << RESET << getUsedIn() << endl;
+        cout << "---------------------------------------------\n";
     }
 
-    Fish(std::string name, std::string description, std::vector<int> price, std::vector<Location> locations, int startTime, int endTime, std::vector<Season> seasons, std::vector<Season> specialSeasons, Location specialLocation, bool rain, bool sun, int minSize, int maxSize, int difficulty, Behavior behave, int xp, std::vector<std::string> usedIn) {
+    Fish(string name, string description, vector<int> price, vector<Location> locations, int startTime, int endTime, vector<Season> seasons, vector<Season> specialSeasons, Location specialLocation, bool rain, bool sun, int minSize, int maxSize, int difficulty, Behavior behave, int xp, vector<string> usedIn) {
             Name = name;
             Description = description;
             Price = price;
@@ -259,14 +262,14 @@ public:
         }
 
 private:
-    std::string Name;   //name of the fish
-    std::string Description; //description of the fish
-    std::vector<int> Price; //prices of the fish in order: Basic, Silver, Gold, Iridium
-    std::vector<Location> Locations; //locations where the fish can be caught
+    string Name;   //name of the fish
+    string Description; //description of the fish
+    vector<int> Price; //prices of the fish in order: Basic, Silver, Gold, Iridium
+    vector<Location> Locations; //locations where the fish can be caught
     int StartTime; //start time of when the fish can be caught
     int EndTime; //end time of when the fish can be caught
-    std::vector<Season> Seasons; //seasons when the fish is available
-    std::vector<Season> SpecialSeasons; //special seasons when the fish is available
+    vector<Season> Seasons; //seasons when the fish is available
+    vector<Season> SpecialSeasons; //special seasons when the fish is available
     Location SpecialLocation; //special location where the fish is available
     bool Rain; // whether you can catch it in rainy weather
     bool Sun; // whether you can catch it in sunny weather
@@ -275,11 +278,11 @@ private:
     int Difficulty; //difficulty of the fish
     Behavior Behave; //behavior type of the fish
     int XP; //experience points for catching the fish
-    std::vector<std::string> UsedIn; //what recipes the fish is used in
+    vector<string> UsedIn; //what recipes the fish is used in
 
 
-    std::string locationToString(Location loc) {
-        std::string str = "";
+    string locationToString(Location loc) {
+        string str = "";
         switch (loc)
         {
             case Location::ForestFarm:
@@ -346,8 +349,8 @@ private:
         return str;
     }
 
-    std::string seasonToString(Season season) {
-        std::string str = "";
+    string seasonToString(Season season) {
+        string str = "";
         switch (season)
         {
             case Season::Spring:
@@ -369,8 +372,8 @@ private:
         return str;
     }
 
-    std::string behaviorToString(Behavior behavior) {
-        std::string str = "";
+    string behaviorToString(Behavior behavior) {
+        string str = "";
         switch (behavior)
         {
             case Behavior::Floater:
