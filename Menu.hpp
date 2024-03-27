@@ -6,7 +6,6 @@
 #include <unistd.h>
 
 #include "Fish.hpp"
-#include "FishReader.hpp"
 
 #define FISHER 1.25
 #define ANGLER 1.5
@@ -16,6 +15,8 @@ using namespace std;
 struct Farmer {
     string name;
     double profession;
+    vector<string> detailedOptions;
+    vector<string> lessDetailedOptions;
 };
 
 class Menu {
@@ -25,7 +26,10 @@ public:
 
     
     Farmer Config() {
-        fstream file("config.txt");
+        fstream file;
+        file.open("config.txt");
+
+        // if there is no config file, create it and set it up
         if(!file.is_open()) {
             cout << "This seems to be the first time you are running this program. \nPlease enter your name: ";
             string name;
@@ -43,32 +47,59 @@ public:
                 }
 
             }
-
-            ArrowList(
-                "What details would you like to see on a DETAILED fish search?\n",
-                {"Description", "Price", "Locations", "Available time", "Season", "Weather", "Size", "Difficulty", "XP", "Uses"}
-            );
-
-            cout << "What details would you like to see on a less detailed fish search?" << endl;
-
-
-            file.open("config.txt");
+            file.open("config.txt", std::ios::out | std::ios::app);
             file << name << endl;
             file << fisher << endl;
+
+            vector<string> options = {"Description", "Price", "Locations", "Time", "Season", "Weather", "Size", "Difficulty", "XP", "Uses"};
+            ArrowCheckList(
+                {"What details would you like to see on a DETAILED fish search?\n"},
+                &options
+            );
+
+            file << options.size() << endl;
+            for (string s : options) {
+                file << s << endl;
+            }
+
+            options.clear();
+            options =  {"Description", "Price", "Locations", "Time", "Season", "Weather", "Size", "Difficulty", "XP", "Uses"};
+            ArrowCheckList( 
+                {"What details would you like to see on a less detailed fish search?"},
+                &options
+            );
+
+            file << options.size() << endl;
+            for (string s : options) {
+                file << s << endl;
+            }
+
             file.close();
         }
-        string name;
-        double fisher;
+        
         file >> farmer.name;
         file >> farmer.profession;
-        file.close();
-        return farmer;
-        
+        int size;
+        file >> size;
+        for(int i = 0; i <= size; i++) {
+            string s;
+            file >> s;
+            farmer.detailedOptions.push_back(s);
+        }
+        file >> size;
+        for(int i = 0; i <= size; i++) {
+            string s;
+            file >> s;
+            farmer.lessDetailedOptions.push_back(s);
+        }
 
-            
+        file.close(); 
+        return farmer;
     }
 
     int MainMenu() {
+        // /*debug*/cin.ignore();
+        system("clear");
         cout << "What would you like to do?" << endl;
         cout << "1. List all fish names" << endl;
         cout << "2. Search for a fish" << endl;
@@ -88,12 +119,13 @@ public:
         for (int i = 0; i < fishList.size(); i++) {
             cout << fishList[i].getName() << endl;
         }
-        cout << "Would the details of any? (y/n): ";
+        cout << "Would you like to print the details of any? (y/N): ";
         string ans;
         getline(cin, ans);
         if(ans == "y") {
             return 2;
         }
+        return 1;
     }
 
     int Search() {
@@ -101,209 +133,123 @@ public:
         string name;
         getline(cin, name);
         string ans;
-            
+        bool found = false;
+
         for (int i = 0; i < fishList.size(); i++) {
             if (fishList[i].getName() == name) {
-                fishList[i].printFishAllDetails(farmer.profession);
+                fishList[i].printFishDetails(farmer.detailedOptions, farmer.profession);
+                found = true;
                 break;
             }
         }
-        cout << "Would you like to search for another fish? (y/n): ";
+        if(!found) { cout << RED << "Fish not found!\n" << RESET; }
+        cout << "Would you like to search for another fish? (y/N): ";
         getline(cin, ans);
-        if(ans == "n") {
-            return 0;
+        if(ans == "y") {
+            return 2;
         }
+        return 0;
     }
 
     int CatchRN() {
         vector<Fish> filteredFish = fishList;
-        FishReader fr("fish_database.csv");
+        vector<string> dialogue;
+        vector<string> options;
+        int answer;
 
         /*--------------------------SEASON--------------------------*/
-            vector<string> options = {"Any", "Spring", "Summer", "Fall", "Winter"};
-            int selectedOption = 0;
-            string question = "What season is it? \t";
-            printOptions(options, selectedOption, question);
+        dialogue.push_back("What season is it?");
+        options = {"Any", "Spring", "Summer", "Fall", "Winter"};
+        answer = ArrowList(dialogue, &options);
 
-            setNonBlocking(true); // Enable non-blocking input
-
-            char key;
-            do {
-                key = getchar(); // Read a single character (non-blocking)
-
-                // Handle arrow key presses
-                switch (key) {
-                    case 65: // Up arrow key
-                        if (selectedOption > 0) {
-                            selectedOption--;
-                        }
-                        break;
-                    case 66: // Down arrow key
-                        if (selectedOption < options.size() - 1) {
-                            selectedOption++;
-                        }
-                        break;
+        dialogue.push_back(options[answer]);
+        if(options[answer] != "Any") {
+            for(int i = 0; i < filteredFish.size(); i++) {
+                if(!filteredFish[i].isAvailable(eh.stringToSeason(options[answer]))) {
+                    filteredFish.erase(filteredFish.begin() + i);
+                    i--;
                 }
-                printOptions(options, selectedOption, question);
-            } while (key != 10); // Repeat until Enter key is pressed
+            }
+        }
+        
+        
+        /*--------------------------LOCATION--------------------------*/
+        options.clear();
+        dialogue.push_back("Where are you fishing? ");
+        options = {"Any", "Forest Farm", "Ocean", "Town River", "Forest River", "Forest Pond", "Secret Woods", "Mountain Lake", "Mines", "Witch's Swamp", "Sewers", "Mutant Bug Lair", "Desert", "Pirate Cove", "Ginger Island Pond", "Ginger Island River", "Ginger Island Ocean", "Volcano Caldera", "Night Market"};
+        ArrowCheckList(dialogue, &options);
 
-            setNonBlocking(false); // Disable non-blocking input
+        dialogue.push_back("");
+        if(options[0] != "Any") {
+            for(int i = 0; i < options.size(); i++) {
+                dialogue[dialogue.size() - 1].append(options[i]);
+                if(i != options.size() - 1) {
+                    dialogue[dialogue.size() - 1].append(", ");
+                }
+                if(i + 1 % 5 == 0) {
+                    dialogue[dialogue.size() - 1].append("\n\t\t");
+                }
+            }
+            for(int j = 0; j < filteredFish.size(); j++) {
+                if(!filteredFish[j].isAvailable(options)) {
+                    filteredFish.erase(filteredFish.begin() + j);
+                    j--;
+                }
+            }
+        }
+        else {
+            dialogue[dialogue.size() - 1].append("Any");
+        }
 
-            question.append(options[selectedOption]);
-            question.append("\n");
-            if(options[selectedOption] != "Any") {
+        /*--------------------------WEATHER--------------------------*/
+            dialogue.push_back("What's the weather?");
+            options.clear();
+            options = {"Any", "Rainy", "Sunny"};
+            int ans = ArrowList(dialogue, &options);
+            bool isRain = false;    
+            bool isSun = false;
+            if(ans == 1) {
+                isRain = true;
+                dialogue.push_back("Rainy");
+            }
+            if(ans == 0) {
+                isRain = true;
+                isSun = true;
+                dialogue.push_back("Any");
+            }
+            if(ans == 2) {
+                isSun = true;
+                dialogue.push_back("Sunny");
+            }
+            if(!isRain || !isSun) {
                 for(int i = 0; i < filteredFish.size(); i++) {
-                    if(!filteredFish[i].isAvailable(fr.stringToSeason(options[selectedOption]))) {
+                    if(!filteredFish[i].isAvailable(isRain, isSun)) {
                         filteredFish.erase(filteredFish.begin() + i);
                         i--;
                     }
                 }
             }
-
-        /*--------------------------LOCATION--------------------------*/
-            system("clear");
-            cout << question;
-            options.clear();
-            int count = 0;
-            options = {"Any", "Forest Farm", "Ocean", "Cindersap Forest Pond", "Town", "Forest River", "Forest Pond", "Secret Woods", "Mountain", "Mines", "Witch's Swamp", "Sewers", "Mutant Bug Lair", "Desert", "Pirate Cove", "Ginger Island Pond", "Ginger Island River", "Ginger Island Ocean", "Volcano Caldera", "Night Market"};
-            vector<bool> selectedOptions;
-            for(int i = 0; i < options.size(); i++) {
-                selectedOptions.push_back(false);
-            }
-            selectedOption = 0;
-            question.append("Where are you fishing? ");
-            printOptionsChecklist(options, selectedOption, selectedOptions, question);
-            setNonBlocking(true); // Enable non-blocking input
-            do {
-                key = getchar(); // Read a single character (non-blocking)
-
-                // Handle arrow key presses
-                switch (key) {
-                    case 65: // Up arrow key
-                        if (selectedOption > 0) {
-                            selectedOption--;
-                        }
-                        break;
-                    case 66: // Down arrow key
-                        if (selectedOption < options.size() - 1) {
-                            selectedOption++;
-                        }
-                        break;
-                    case 32: // Space key
-                        selectedOptions[selectedOption] = !selectedOptions[selectedOption];
-                        if(selectedOption == 0) {
-                            for(int i = 1; i < selectedOptions.size(); i++) {
-                                selectedOptions[i] = selectedOptions[0];
-                            }
-                        }
-
-                        break;
-
-                }
-                printOptionsChecklist(options, selectedOption, selectedOptions, question);
-            } while (key != 10); // Repeat until Enter key is pressed
-
-            setNonBlocking(false); // Disable non-blocking input
-            
-            bool boolSum = true;
-            if(!selectedOptions[0]) {
-                for(int i = 0; i < selectedOptions.size(); i++) {
-                    if(selectedOptions[i]) {
-                        question.append(options[i]);
-                        boolSum = boolSum | selectedOptions[i];
-                        if(i != selectedOptions.size() - 1) {
-                            question.append(", ");
-                        }
-                    }
-                }
-            }
-            else {
-                question.append("Any");
-            }
-            if(!boolSum) {
-                question.append(options[selectedOption]);
-                selectedOptions[selectedOption] = true;
-                if(selectedOption == 0) {
-                    for(int i = 1; i < selectedOptions.size(); i++) {
-                        selectedOptions[i] = selectedOptions[0];
-                    }
-                }
-            }
-
-            options.clear();
-            options = {"Any", "ForestFarm", "Ocean", "CindersapForestPond", "TownRiver", "ForestRiver", "ForestPond", "SecretWoods", "MountainLake", "Mines", "WitchSwamp", "Sewers", "MutantBugLair", "Desert", "PirateCove", "GIPond", "GIRiver", "GIOcean", "VolcanoCaldera", "NightMarket"};
-            bool keep = false;
-            for(int i = 0; i < filteredFish.size(); i++) {
-                for(int j = 1; j < options.size(); j++) {
-                    if(selectedOptions[j]) {
-cout << j << " ";
-                        if(filteredFish[i].isAvailable(fr.stringToLocation(options[j]))) {
-                            keep |= true;
-                            break;
-                            
-                        }
-                    }
-                }
-                if(!keep) {
-                    filteredFish.erase(filteredFish.begin() + i);
-                    i--;
-                }
-            }
-cin.ignore();
-
-        /*--------------------------WEATHER--------------------------*/
-            system("clear");
-            cout << question;
-            cout << "\nIs it raining? ((y)es/((n)o/doesn't m(a)tter): ";
-            string ans;
-            getline(cin, ans);
-            bool isRain = false;    
-            bool isSun = false;
-            if(ans == "y") {
-                isRain = true;
-            }
-            if(ans == "a") {
-                isRain = true;
-                isSun = true;
-            }
-            if(ans == "n") {
-                isSun = true;
-            }
-            question.append("\nIs it raining? ");
-            if(ans == "y") {
-                question.append("Yes");
-            }
-            if(ans == "n") {
-                question.append("No");
-            }
-            if(ans == "a") {
-                question.append("Doesn't matter");
-            }
-            question.append("\n");
-
-            for(int i = 0; i < filteredFish.size(); i++) {
-                if(!filteredFish[i].isAvailable(isRain, isSun)) {
-                    filteredFish.erase(filteredFish.begin() + i);
-                    i--;
-                }
-            }
          
             /*--------------------------TIME--------------------------*/
             system("clear");
-            cout << question;
-            cout << "\nWhat time is it? (6-23, 0-2): ";
+            printDialogue(dialogue);
+            cout << YELLOW << "What time is it? (6-23, 0-2): " << RESET;
             int time;
-            cin >> time;
-            if(time == 0) { time = 24;}
-            if(time == 1) { time = 25;}
-            if(time == 2) { time = 26;}
-            cin.ignore();
-            question.append("\nWhat time is it? ");
-            question.append(to_string(time));
-            question.append("\n");
-
-            system("clear");
-            cout << question;
+            while (true) {
+                cin >> time;
+                cin.ignore();
+                if(time == 0) { time = 24;}
+                if(time == 1) { time = 25;}
+                if(time == 2) { time = 26;}
+                if(time < 6 || time > 26) {
+                    cout << "Invalid time. What time is it? (6-23, 0-2):";
+                }
+                else {
+                    break;
+                }
+            }
+            dialogue.push_back("What time is it? ");
+            dialogue.push_back(to_string(time));
 
             for(int i = 0; i < filteredFish.size(); i++) {
                 if(!filteredFish[i].isAvailable(time)) {
@@ -312,127 +258,287 @@ cin.ignore();
                 }
             }
 
-            cout << "You can catch the following fish right now: " << endl;
+            system("clear");
+            printDialogue(dialogue);
+            if(filteredFish.size() == 0) {
+                cout << "There are no fish available right now. Press any key to continue...";
+                cin.ignore();
+                return 3;
+            }
+            cout << "You can catch " << filteredFish.size() << " fish right now: " << endl;
             for(int i = 0; i < filteredFish.size(); i++) {
-                filteredFish[i].printFish();
+                cout << filteredFish[i].getName() << endl;
             }
         
 
             cout << "Press any key to continue...";
             cin.ignore();
+            return 3;
   
     }
 
+    int CatchToday() {
+        vector<Fish> filteredFish = fishList;
+        vector<string> dialogue;
+        vector<string> options;
+        int answer;
 
+        /*--------------------------SEASON--------------------------*/
+        dialogue.push_back("What season is it?");
+        options = {"Any", "Spring", "Summer", "Fall", "Winter"};
+        answer = ArrowList(dialogue, &options);
 
+        dialogue.push_back(options[answer]);
+        if(options[answer] != "Any") {
+            for(int i = 0; i < filteredFish.size(); i++) {
+                if(!filteredFish[i].isAvailable(eh.stringToSeason(options[answer]))) {
+                    filteredFish.erase(filteredFish.begin() + i);
+                    i--;
+                }
+            }
+        }
+        
+        
+        /*--------------------------LOCATION--------------------------*/
+        options.clear();
+        dialogue.push_back("Where are you fishing? ");
+        options = {"Any", "Forest Farm", "Ocean", "Town River", "Forest River", "Forest Pond", "Secret Woods", "Mountain Lake", "Mines", "Witch's Swamp", "Sewers", "Mutant Bug Lair", "Desert", "Pirate Cove", "Ginger Island Pond", "Ginger Island River", "Ginger Island Ocean", "Volcano Caldera", "Night Market"};
+        ArrowCheckList(dialogue, &options);
 
+        dialogue.push_back("");
+        if(options[0] != "Any") {
+            for(int i = 0; i < options.size(); i++) {
+                dialogue[dialogue.size() - 1].append(options[i]);
+                if(i != options.size() - 1) {
+                    dialogue[dialogue.size() - 1].append(", ");
+                }
+                if(i + 1 % 5 == 0) {
+                    dialogue[dialogue.size() - 1].append("\n\t\t");
+                }
+            }
+            for(int j = 0; j < filteredFish.size(); j++) {
+                if(!filteredFish[j].isAvailable(options)) {
+                    filteredFish.erase(filteredFish.begin() + j);
+                    j--;
+                }
+            }
+        }
+        else {
+            dialogue[dialogue.size() - 1].append("Any");
+        }
+            
 
+        /*--------------------------WEATHER--------------------------*/
+        dialogue.push_back("What's the weather?");
+        options.clear();
+        options = {"Any", "Rainy", "Sunny"};
+        int ans = ArrowList(dialogue, &options);
+        bool isRain = false;    
+        bool isSun = false;
+        if(ans == 1) {
+            isRain = true;
+            dialogue.push_back("Rainy");
+        }
+        if(ans == 0) {
+            isRain = true;
+            isSun = true;
+            dialogue.push_back("Any");
+        }
+        if(ans == 2) {
+            isSun = true;
+            dialogue.push_back("Sunny");
+        }
+        if(!isRain || !isSun) {
+            for(int i = 0; i < filteredFish.size(); i++) {
+                if(!filteredFish[i].isAvailable(isRain, isSun)) {
+                    filteredFish.erase(filteredFish.begin() + i);
+                    i--;
+                }
+            }
+        }
 
+        system("clear");
+        printDialogue(dialogue);
+        if(filteredFish.size() == 0) {
+            cout << "There are no fish available right now. Press any key to continue...";
+            cin.ignore();
+            return 3;
+        }
+        cout << "You can catch " << filteredFish.size() << " fish right now: " << endl;
+        for(int i = 0; i < filteredFish.size(); i++) {
+            cout << filteredFish[i].getName() << endl;
+        }
+    
+        cout << "Press any key to continue...";
+        cin.ignore();
+  
+        return 4;
+    }
 
-
+    int UpdateConfig(Farmer f) {
+        remove("config.txt");
+        f = Config();
+        return 5;
+    }
 
 private:
     vector<Fish> fishList;
     Farmer farmer;
+    EnumHelper eh;
 
-    void printOptions(const vector<string>& options, int selectedOption, string q) {
-        system("clear"); // Clear screen
+    void printDialogue(vector<string> dialogue) {
+        for (int i = 0; i < dialogue.size(); i++) {
+            if(i % 2 == 0) {
+                cout << YELLOW << dialogue[i] << RESET << "\t";
+            }
+            else {
+                cout << dialogue[i] << endl;
+            }
+        }
+    }
 
-        cout << q << endl;
+    void printOptions(const vector<string>& options, int selectedOption, vector<string> q) {
+        system("clear");
+
+        printDialogue(q);
+        cout << endl;
         for (int i = 0; i < options.size(); ++i) {
             if (i == selectedOption) {
-                cout << GREEN << "> " << options[i] << RESET << endl; // Highlight selected option
+                cout << GREEN << "> " << options[i] << RESET << endl; 
             } else {
                 cout << "  " << options[i] << endl;
             }
         }
     }
 
-    void printOptionsChecklist(const vector<string>& options, int selectedOption, vector<bool> selectedOptions, string q) {
-        // ANSI escape codes for colors
-        const string selectedColor = "\033[1;32m"; // Green for selected option
-        const string defaultColor = "\033[0m"; // Default color
+    void printOptionsChecklist(const vector<string>& options, int selectedOption, vector<bool> selectedOptions, vector<string> q) {
+        system("clear");
 
-        system("clear"); // Clear screen
-
-        cout << q << endl;
+        printDialogue(q);
+        cout << endl;
         for (int i = 0; i < options.size(); i++) {
             if (i == selectedOption) {
-                cout << selectedColor << "> " << defaultColor << options[i] << endl; // Highlight selected option
+                cout << GREEN << "> " ; 
             }
             else 
             {
-                cout << selectedColor << "  ";
+                cout << GREEN << "  ";
             }
-                if(selectedOptions[i]) {
-                cout << selectedColor << "  " << options[i] << defaultColor << endl; // Highlight selected option
+            if(selectedOptions[i]) {
+                cout << GREEN << options[i] << RESET << endl; 
             }           
             else {
-                cout << "  " << options[i] << endl;
+                cout << RESET << options[i] << endl;
             }
 
         }
     }
 
-    // Function to enable non-blocking input
     void setNonBlocking(bool enable) {
         struct termios ttystate;
         tcgetattr(STDIN_FILENO, &ttystate);
         if (enable) {
-            ttystate.c_lflag &= ~ICANON; // Disable canonical mode
-            ttystate.c_cc[VMIN] = 1; // Minimum number of characters to read
+            ttystate.c_lflag &= ~ICANON;
+            ttystate.c_cc[VMIN] = 1;
         } else {
-            ttystate.c_lflag |= ICANON; // Enable canonical mode
+            ttystate.c_lflag |= ICANON;
         }
         tcsetattr(STDIN_FILENO, TCSANOW, &ttystate);
     }
 
-    void ArrowList(string question, vector<string> options) {
+    int ArrowList(vector<string> dialogue, vector<string> *options) {
         system("clear");
-        //init variables
+        int selectedOption = 0;
+        
+        char key;
+        setNonBlocking(true); 
+        do {
+            printOptions(*options, selectedOption, dialogue);
+            key = getchar(); 
+            switch (key) {
+                case 65: 
+                    if (selectedOption > 0) {
+                        selectedOption--;
+                    }
+                    break;
+                case 66: 
+                    if (selectedOption < options->size() - 1) {
+                        selectedOption++;
+                    }
+                    break;
+            }
+        } while (key != 10); 
+        setNonBlocking(false); 
+        return selectedOption;
+    }
+
+    void ArrowCheckList(vector<string> question, vector<string> *options) {
+        system("clear");
+
         vector<bool> selectedOptions;
-        for(int i = 0; i < options.size(); i++) {
+        for(int i = 0; i < options->size(); i++) {
             selectedOptions.push_back(false);
         }
         int selectedOption = 0;
 
         
         char key;
-        setNonBlocking(true); // Enable non-blocking input
+        setNonBlocking(true); 
+        
         do {
-            printOptionsChecklist(options, selectedOption, selectedOptions, question);
-            key = getchar(); // Read a single character (non-blocking)
-            // Handle arrow key presses
+            printOptionsChecklist(*options, selectedOption, selectedOptions, question);
+            key = getchar(); 
+           
             switch (key) {
-                case 65: // Up arrow key
+                case 65: 
                     if (selectedOption > 0) {
                         selectedOption--;
                     }
                     break;
-                case 66: // Down arrow key
-                    if (selectedOption < options.size() - 1) {
+                case 66: 
+                    if (selectedOption < options->size() - 1) {
                         selectedOption++;
                     }
                     break;
-                case 32: // Space key
+                case 32: 
                     selectedOptions[selectedOption] = !selectedOptions[selectedOption];
+                    if(options->at(0) == "Any") {
+                        if(selectedOption == 0) {
+                            for(int i = 1; i < selectedOptions.size(); i++) {
+                                selectedOptions[i] = selectedOptions[0];
+                            }
+                        }
+                        else if(!selectedOptions[selectedOption]) {
+                            selectedOptions[0] = false;
+                        }
+                        else {
+                            for(int i = 1; i < selectedOptions.size(); i++) {
+                                selectedOptions[0] = selectedOptions[0] && selectedOptions[i];
+                            }
+                        }
+                    }
                     break;
             }
-        } while (key != 10); // Repeat until Enter key is pressed
-        setNonBlocking(false); // Disable non-blocking input
+        } while (key != 10); 
+        setNonBlocking(false); 
+        //TODO: if no options are selected, the last one selected before enter should be selected
+        int b;
+        for(b = 0; b < selectedOptions.size(); b++) {
+            if(selectedOptions[b]) {
+                break;
+            }
+        }
+        if(b == selectedOptions.size()) {
+            selectedOptions[selectedOption] = true;
+        }
 
-        //produce selection
         for(int i = 0; i < selectedOptions.size(); i++) {
             if(!selectedOptions[i]) {
-                options.erase(options.begin() + i);
+                options->erase(options->begin() + i);
                 selectedOptions.erase(selectedOptions.begin() + i);
                 i--;
                 
             }
-        }
-
-        for(int i = 0; i < options.size(); i++) {
-            cout << options[i] << endl;
         }
 
 
