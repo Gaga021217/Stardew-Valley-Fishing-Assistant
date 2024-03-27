@@ -5,7 +5,6 @@
 #include <termios.h>
 #include <unistd.h>
 
-#include "Fish.hpp"
 #include "FishReader.hpp"
 #include "Menu.hpp"
 
@@ -13,16 +12,16 @@ using namespace std;
 
 int main() {
 
-    FishReader fr("fish_database.csv");    
-    vector<Fish> fishList = fr.getFishList();
-    
-
-    system("clear");
+    FishReader fr;    
+    vector<Fish> fishList = fr.getFishList("FishDatabase.csv");
+        
     Menu m(fishList);
     Farmer farmer = m.Config();
-    while (true) {
+
+
+    do {
         int choice = m.MainMenu();
-        
+
         if (choice == 0) {
             break;
         }
@@ -30,12 +29,18 @@ int main() {
             choice = m.PrintAllFish();
         }
         while(choice == 2) {
-            
+            choice = m.Search();
         }
         if(choice == 3) {
-           
+           choice = m.CatchRN();
         }
-        system("clear");
-    }
+        if(choice == 4) {
+            choice = m.CatchToday();
+        }
+        if(choice == 5) {
+            choice = m.UpdateConfig(farmer);
+        }
+        // system("clear");
+    } while (true);
 
 }
